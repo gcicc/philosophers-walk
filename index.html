@@ -53,9 +53,32 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .dur-row{display:flex;gap:6px;justify-content:center;margin:10px 0;}
 .dur-btn{background:none;border:1px solid rgba(196,168,130,0.12);color:var(--text-dim);padding:4px 10px;border-radius:10px;font-size:10px;cursor:pointer;}
 .dur-btn.active{color:var(--sand);border-color:rgba(196,168,130,0.3);}
+.onboard-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:100;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding:20px;}
+.onboard-overlay.hidden{display:none;}
+.onboard{background:#161b22;border:1px solid rgba(196,168,130,0.1);border-radius:16px;padding:24px 20px;max-width:380px;width:100%;max-height:85vh;overflow-y:auto;}
+.onboard h2{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300;color:#c4a882;letter-spacing:2px;text-align:center;margin-bottom:12px;}
+.onboard p{font-size:12px;line-height:1.6;color:#e6ddd0;opacity:0.85;margin-bottom:10px;}
+.onboard .hl{color:#c4a882;}
+.onboard .step{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;}
+.onboard .step-num{background:#9b8ec4;color:#0d1117;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0;}
+.onboard .step-text{font-size:12px;line-height:1.6;color:#e6ddd0;opacity:0.9;}
+.onboard .step-text strong{color:#c4a882;}
+.onboard .dismiss{display:block;margin:14px auto 0;background:rgba(196,168,130,0.1);border:1px solid rgba(196,168,130,0.25);color:#c4a882;padding:10px 32px;border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:14px;cursor:pointer;letter-spacing:1px;}
 </style>
 </head>
 <body>
+<div class="onboard-overlay" id="onboard">
+  <div class="onboard">
+    <h2>Philosopher's Walk</h2>
+    <p>This app combines <span class="hl">walking</span> with <span class="hl">philosophical contemplation</span>. It's designed to be used while you walk — outside, around your neighborhood, or even pacing indoors.</p>
+    <div class="step"><div class="step-num">1</div><div class="step-text">Choose a <strong>duration</strong> (5-30 minutes) and a <strong>question</strong> to contemplate.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text"><strong>Start walking.</strong> The app will show timed <strong>contemplation prompts</strong> that deepen your inquiry — from opening reflection to practical application.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text">Don't rush to answer. Let the question <span class="hl">walk with you</span>. The prompts change automatically at intervals throughout your walk.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-text">When the timer ends, you'll see a completion screen. The question continues to work in you after the walk.</div></div>
+    <p style="font-style:italic;color:#9b8ec4;font-size:11px;">Best experienced outdoors with headphones off — let the world be your soundtrack.</p>
+    <button class="dismiss" id="dismissOnboard">Choose a Question</button>
+  </div>
+</div>
 <div class="header">
   <h1>Philosopher's Walk</h1>
   <div class="sub">Walk &middot; Think &middot; Become</div>
@@ -241,6 +264,9 @@ document.getElementById('btnAgain').addEventListener('click',()=>{setState('choo
 document.getElementById('btnRandom').addEventListener('click',()=>startWalk(Math.floor(Math.random()*QUESTIONS.length)));
 
 renderDurations();renderQuestions();
+const onboard=document.getElementById('onboard');
+if(localStorage.getItem('philwalk-onboarded')) onboard.classList.add('hidden');
+document.getElementById('dismissOnboard').addEventListener('click',()=>{onboard.classList.add('hidden');localStorage.setItem('philwalk-onboarded','1');});
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>

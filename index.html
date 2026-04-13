@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PhilWalk">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Philosopher's Walk</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400&display=swap');
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#1c2333;--sand:#c4a882;--text:#e6ddd0;--text-dim:#7d7567;--lavender:#9b8ec4;--sage:#7c9a72;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom);overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.header{text-align:center;padding:20px 0 8px;width:100%;max-width:480px;}
+.header h1{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;letter-spacing:3px;color:var(--sand);text-transform:uppercase;}
+.header .sub{font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
+
+/* STATES */
+.state{display:none;width:100%;max-width:480px;text-align:center;}
+.state.active{display:block;}
+
+/* CHOOSE */
+.question-list{display:flex;flex-direction:column;gap:8px;margin:16px 0;}
+.q-btn{background:var(--bg2);border:1px solid rgba(196,168,130,0.08);padding:14px 16px;border-radius:12px;text-align:left;cursor:pointer;transition:all 0.2s;}
+.q-btn:active{transform:scale(0.98);}
+.q-btn .q-text{font-family:'Cormorant Garamond',serif;font-size:16px;font-style:italic;color:var(--sand);line-height:1.4;}
+.q-btn .q-trad{font-size:9px;color:var(--lavender);letter-spacing:1px;text-transform:uppercase;margin-top:4px;}
+.or-text{font-size:10px;color:var(--text-dim);margin:8px 0;letter-spacing:2px;}
+
+/* WALKING */
+.walk-timer{font-family:'Cormorant Garamond',serif;font-size:60px;font-weight:300;color:var(--sand);font-variant-numeric:tabular-nums;margin:20px 0;}
+.walk-question{font-family:'Cormorant Garamond',serif;font-size:20px;font-style:italic;color:var(--sand);margin-bottom:20px;line-height:1.5;}
+.walk-prompt{background:var(--bg2);border-radius:12px;padding:16px;margin:12px 0;border-left:3px solid var(--lavender);text-align:left;transition:opacity 0.5s;}
+.walk-prompt .prompt-label{font-size:8px;color:var(--lavender);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;}
+.walk-prompt .prompt-text{font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--text);line-height:1.6;opacity:0.9;}
+.walk-phase{font-size:10px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.progress-bar{width:100%;max-width:300px;height:3px;background:var(--bg3);border-radius:2px;margin:0 auto 16px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--sand);border-radius:2px;transition:width 1s linear;}
+
+/* DONE */
+.done-card{background:var(--bg2);border-radius:14px;padding:20px;margin:16px 0;text-align:left;}
+.done-card h3{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--sand);margin-bottom:8px;}
+.done-card p{font-size:12px;line-height:1.6;color:var(--text);opacity:0.8;margin-bottom:8px;}
+.done-stat{font-size:11px;color:var(--sage);font-style:italic;}
+
+.btn{background:none;border:1px solid rgba(196,168,130,0.3);color:var(--sand);padding:10px 28px;border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:15px;cursor:pointer;letter-spacing:1px;margin:8px 4px;}
+.btn:active{transform:scale(0.95);}
+.btn.primary{background:rgba(196,168,130,0.1);}
+
+.dur-row{display:flex;gap:6px;justify-content:center;margin:10px 0;}
+.dur-btn{background:none;border:1px solid rgba(196,168,130,0.12);color:var(--text-dim);padding:4px 10px;border-radius:10px;font-size:10px;cursor:pointer;}
+.dur-btn.active{color:var(--sand);border-color:rgba(196,168,130,0.3);}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Philosopher's Walk</h1>
+  <div class="sub">Walk &middot; Think &middot; Become</div>
+</div>
+
+<!-- STATE: CHOOSE -->
+<div class="state active" id="stateChoose">
+  <div class="dur-row" id="durRow"></div>
+  <div class="or-text">Choose your question</div>
+  <div class="question-list" id="questionList"></div>
+  <button class="btn" id="btnRandom">Random Question</button>
+</div>
+
+<!-- STATE: WALKING -->
+<div class="state" id="stateWalking">
+  <div class="walk-phase" id="walkPhase"></div>
+  <div class="walk-timer" id="walkTimer">15:00</div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="walk-question" id="walkQuestion"></div>
+  <div class="walk-prompt" id="walkPrompt">
+    <div class="prompt-label" id="promptLabel">Opening</div>
+    <div class="prompt-text" id="promptText"></div>
+  </div>
+  <button class="btn" id="btnStop">End Walk</button>
+</div>
+
+<!-- STATE: DONE -->
+<div class="state" id="stateDone">
+  <div class="done-card">
+    <h3 id="doneTitle"></h3>
+    <p id="doneQuote"></p>
+    <div class="done-stat" id="doneStat"></div>
+  </div>
+  <button class="btn primary" id="btnAgain">Walk Again</button>
+</div>
+
+<script>
+const QUESTIONS = [
+  {q:'What makes a good life?', tradition:'Aristotle / Eudaimonia',
+   prompts:[
+     {phase:'Opening',text:'Begin walking. Feel your feet on the ground. Let the question settle: what makes a good life?'},
+     {phase:'Deepen',text:'Think of a moment when you felt most alive. What was happening? What were you doing? Who were you with?'},
+     {phase:'Challenge',text:'Is a good life the same as a happy life? Can a life full of suffering still be good?'},
+     {phase:'Perspective',text:'Aristotle said the good life is one of virtue — of becoming the best version of yourself. Do you agree?'},
+     {phase:'Apply',text:'What is one thing you could change this week to move your life closer to "good"?'},
+     {phase:'Closing',text:'Let the question rest. You don\'t need an answer today. The walk itself — thinking, moving, being present — is part of the good life.'},
+   ]},
+  {q:'What do I owe to others?', tradition:'Ethics / Social Contract',
+   prompts:[
+     {phase:'Opening',text:'Walk and notice the people around you — or their absence. Each one has a life as complex as yours.'},
+     {phase:'Deepen',text:'Think of someone who helped you when they didn\'t have to. What motivated them?'},
+     {phase:'Challenge',text:'Do you owe more to those close to you, or equally to strangers? Where does obligation end?'},
+     {phase:'Perspective',text:'Peter Singer argues that if you can prevent suffering at minimal cost, you are morally obligated to do so. Where do you draw the line?'},
+     {phase:'Apply',text:'Is there someone in your life right now who needs something from you that you\'ve been withholding?'},
+     {phase:'Closing',text:'Obligation and generosity are different. Notice which one feels lighter as you walk.'},
+   ]},
+  {q:'What am I afraid of, and why?', tradition:'Stoicism / Courage',
+   prompts:[
+     {phase:'Opening',text:'Walk at a comfortable pace. Let your mind settle. Then ask: what am I actually afraid of right now?'},
+     {phase:'Deepen',text:'Name the fear specifically. Not "failure" but what failure would actually mean. What would happen next?'},
+     {phase:'Challenge',text:'Seneca practiced "premeditatio malorum" — imagining the worst case. If the worst happened, would you survive?'},
+     {phase:'Perspective',text:'Most fears are about loss — of status, comfort, love, control. Which kind of loss drives your fear?'},
+     {phase:'Apply',text:'What is one small action you could take this week that your fear is currently preventing?'},
+     {phase:'Closing',text:'Courage is not the absence of fear. It is walking forward anyway. You are walking right now.'},
+   ]},
+  {q:'What would I do if no one was watching?', tradition:'Existentialism / Authenticity',
+   prompts:[
+     {phase:'Opening',text:'Walk without purpose. No destination. Let your feet choose the path.'},
+     {phase:'Deepen',text:'How much of your daily life is performed for an audience — even an imagined one?'},
+     {phase:'Challenge',text:'Sartre said we are "condemned to be free." If you stripped away all expectations, what would remain?'},
+     {phase:'Perspective',text:'There is a difference between who you are and who you present. Which one is walking right now?'},
+     {phase:'Apply',text:'Name one thing you do purely for yourself, and one thing you do purely for others\' approval.'},
+     {phase:'Closing',text:'Authenticity is not a destination. It is the practice of noticing the gap — and choosing to close it.'},
+   ]},
+  {q:'What is worth my time?', tradition:'Pragmatism / Finite Life',
+   prompts:[
+     {phase:'Opening',text:'You are spending time right now. Walking, thinking. Is this a good use of your finite hours?'},
+     {phase:'Deepen',text:'If you knew you had exactly one year left, what would you stop doing? What would you start?'},
+     {phase:'Challenge',text:'We say we value things — health, relationships, creativity — but our calendars reveal our true priorities. What does yours say?'},
+     {phase:'Perspective',text:'The Stoics practiced "memento mori" — remember you will die. Not to be morbid, but to clarify what matters.'},
+     {phase:'Apply',text:'What is one thing consuming your time that you know, deep down, is not worth it?'},
+     {phase:'Closing',text:'This walk was worth your time. The question will keep working in the background. Let it.'},
+   ]},
+  {q:'Am I the same person I was ten years ago?', tradition:'Identity / Ship of Theseus',
+   prompts:[
+     {phase:'Opening',text:'Walk and think about who you were a decade ago. What did they believe? What did they want?'},
+     {phase:'Deepen',text:'Your cells have replaced themselves. Your beliefs have shifted. Your relationships have changed. What, if anything, remains constant?'},
+     {phase:'Challenge',text:'If someone who knew you then met you now, would they recognize you — not your face, but your essence?'},
+     {phase:'Perspective',text:'Buddhism says there is no fixed self — just a river of moments. Does that feel liberating or frightening?'},
+     {phase:'Apply',text:'What from your past self do you want to keep? What are you ready to release?'},
+     {phase:'Closing',text:'You are not a fixed thing. You are a process. The person who started this walk is already slightly different from the one finishing it.'},
+   ]},
+];
+
+let duration=15; // minutes
+let selectedQ=null;
+let walkInterval=null;
+let remaining=0;
+let promptIdx=0;
+
+const DURATIONS=[5,10,15,20,30];
+
+function renderDurations(){
+  const el=document.getElementById('durRow');
+  el.innerHTML='';
+  DURATIONS.forEach(d=>{
+    const btn=document.createElement('button');
+    btn.className='dur-btn'+(d===duration?' active':'');
+    btn.textContent=d+' min';
+    btn.addEventListener('click',()=>{duration=d;renderDurations();});
+    el.appendChild(btn);
+  });
+}
+
+function renderQuestions(){
+  const el=document.getElementById('questionList');
+  el.innerHTML='';
+  QUESTIONS.forEach((q,i)=>{
+    const btn=document.createElement('div');
+    btn.className='q-btn';
+    btn.innerHTML=`<div class="q-text">${q.q}</div><div class="q-trad">${q.tradition}</div>`;
+    btn.addEventListener('click',()=>startWalk(i));
+    el.appendChild(btn);
+  });
+}
+
+function setState(s){
+  document.querySelectorAll('.state').forEach(el=>el.classList.remove('active'));
+  document.getElementById('state'+s.charAt(0).toUpperCase()+s.slice(1)).classList.add('active');
+}
+
+function startWalk(qIdx){
+  selectedQ=QUESTIONS[qIdx];
+  remaining=duration*60;
+  promptIdx=0;
+  setState('walking');
+
+  document.getElementById('walkQuestion').textContent=selectedQ.q;
+  showPrompt();
+
+  walkInterval=setInterval(()=>{
+    remaining--;
+    if(remaining<=0){endWalk();return;}
+
+    const m=Math.floor(remaining/60);
+    const s=remaining%60;
+    document.getElementById('walkTimer').textContent=m+':'+s.toString().padStart(2,'0');
+
+    const progress=1-remaining/(duration*60);
+    document.getElementById('progressFill').style.width=(progress*100)+'%';
+
+    // Show next prompt at intervals
+    const promptInterval=Math.floor(duration*60/selectedQ.prompts.length);
+    const expectedIdx=Math.min(Math.floor((duration*60-remaining)/promptInterval),selectedQ.prompts.length-1);
+    if(expectedIdx>promptIdx){promptIdx=expectedIdx;showPrompt();}
+  },1000);
+}
+
+function showPrompt(){
+  const p=selectedQ.prompts[promptIdx];
+  const el=document.getElementById('walkPrompt');
+  el.style.opacity='0';
+  setTimeout(()=>{
+    document.getElementById('promptLabel').textContent=p.phase;
+    document.getElementById('promptText').textContent=p.text;
+    document.getElementById('walkPhase').textContent=`Prompt ${promptIdx+1} of ${selectedQ.prompts.length}`;
+    el.style.opacity='1';
+  },300);
+}
+
+function endWalk(){
+  clearInterval(walkInterval);
+  setState('done');
+  const elapsed=duration*60-remaining;
+  const mins=Math.floor(elapsed/60);
+  document.getElementById('doneTitle').textContent=selectedQ.q;
+  document.getElementById('doneQuote').textContent='You walked and thought for '+mins+' minute'+(mins!==1?'s':'')+'. The question continues to work in you.';
+  document.getElementById('doneStat').textContent='Walk completed — '+new Date().toLocaleDateString();
+}
+
+document.getElementById('btnStop').addEventListener('click',endWalk);
+document.getElementById('btnAgain').addEventListener('click',()=>{setState('choose');});
+document.getElementById('btnRandom').addEventListener('click',()=>startWalk(Math.floor(Math.random()*QUESTIONS.length)));
+
+renderDurations();renderQuestions();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
